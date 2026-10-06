@@ -1,0 +1,483 @@
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0f1115">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>পড়ার রুটিন</title>
+<style>
+:root{--bg:#0f1115;--card:#181b22;--card2:#20242d;--tx:#e8eaf0;--mu:#8a90a0;--ac:#6ea8fe;--gr:#4ade80;--wa:#fbbf24;--rv:#c084fc;--rd:#f87171}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--tx);font-family:"Noto Sans Bengali","Hind Siliguri",system-ui,sans-serif;font-size:16px;line-height:1.5}
+header{position:sticky;top:0;background:var(--bg);padding:12px 16px;border-bottom:1px solid #222733;z-index:5}
+h1{margin:0;font-size:19px}
+main{padding:12px 12px 90px;max-width:640px;margin:0 auto}
+nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:#12151b;border-top:1px solid #222733;padding-bottom:env(safe-area-inset-bottom);z-index:5}
+nav button{flex:1;background:none;border:0;color:var(--mu);padding:8px 2px;font:inherit;font-size:11px}
+nav button .ic{display:block;font-size:19px}
+nav button.on{color:var(--ac)}
+.card{background:var(--card);border-radius:14px;padding:14px;margin-bottom:12px}
+.card.warn{border:1px solid var(--wa);color:var(--wa)}
+.mu{color:var(--mu);font-size:13px}
+.big{font-size:44px;font-weight:700;color:var(--ac);line-height:1.1}
+.row{display:flex;align-items:center;gap:8px;margin:6px 0;flex-wrap:wrap}
+.row>b,.row>input{flex:1}
+.ses{display:flex;align-items:center;gap:12px;background:var(--card2);border-radius:12px;padding:10px 12px;margin:8px 0;border-left:4px solid var(--ac)}
+.ses.rv{border-left-color:var(--rv)}
+.ses.dn{opacity:.5}
+.ses .tm{min-width:84px;font-size:14px}
+.ses .tm small{color:var(--mu)}
+.ses .inf{flex:1}
+.ck{width:30px;height:30px;border-radius:50%;border:2px solid var(--mu);background:none;color:#000;font-size:16px;font-weight:700;flex:none}
+.ses.dn .ck,.ck.on{background:var(--gr);border-color:var(--gr)}
+.ch{display:flex;align-items:center;gap:10px;padding:6px 0;border-top:1px solid #222733}
+.ch span{flex:1}
+.strike{text-decoration:line-through;color:var(--mu)}
+.x{background:none;border:0;color:var(--rd);font-size:22px}
+input,select,textarea,button{font:inherit}
+input,select,textarea{background:var(--card2);color:var(--tx);border:1px solid #2c3240;border-radius:10px;padding:9px 10px;min-width:0}
+input[type=date],input[type=time]{color-scheme:dark}
+textarea{width:100%;height:90px;font-size:12px}
+button.sm,button.pri{background:var(--ac);color:#06101f;border:0;border-radius:10px;padding:9px 14px;font-weight:600}
+button.danger{background:#3a1d1f;color:var(--rd)}
+button.ghost{background:var(--card2);color:var(--tx);border:0;border-radius:10px;padding:9px 14px}
+.clock{font-size:64px;text-align:center;font-weight:700;margin:14px 0;letter-spacing:2px}
+.modes{display:flex;gap:6px}
+.modes button{flex:1;background:var(--card2);color:var(--mu);border:0;border-radius:10px;padding:8px 2px;font-size:13px}
+.modes button.on{background:var(--ac);color:#06101f;font-weight:600}
+.bars{display:flex;align-items:flex-end;gap:6px;height:170px;margin-top:8px}
+.bc{flex:1;text-align:center;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:3px}
+.bar{width:100%;background:var(--ac);border-radius:6px 6px 0 0;min-height:2px}
+.bv{font-size:11px;color:var(--mu)}
+.pb{height:8px;background:var(--card2);border-radius:6px;overflow:hidden;margin-top:4px}
+.pb>i{display:block;height:100%;background:var(--gr)}
+.dh{font-weight:600;margin:14px 0 4px}
+.dh.rv{color:var(--rv)}
+.dl{font-size:14px;color:var(--tx);padding:2px 0}
+#toast{position:fixed;top:12px;left:12px;right:12px;background:var(--ac);color:#06101f;padding:12px;border-radius:12px;z-index:20;display:none;font-weight:600}
+label.l{display:block;margin-top:10px;font-size:14px;color:var(--mu)}
+</style>
+</head>
+<body>
+<div id="toast"></div>
+<header><h1>📚 পড়ার রুটিন</h1></header>
+<main id="main"></main>
+<nav id="nav"></nav>
+<script>
+const KEY='hsc_planner_v1';
+const BD='০১২৩৪৫৬৭৮৯';
+const bn=v=>String(v).replace(/\d/g,d=>BD[d]);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid=()=>Math.random().toString(36).slice(2,9);
+const pad=n=>String(n).padStart(2,'0');
+const dstr=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const pdate=s=>new Date(s+'T00:00:00');
+const today=()=>dstr(new Date());
+const toMin=t=>{const p=t.split(':').map(Number);return p[0]*60+p[1]};
+function fmtT(m){m=((m%1440)+1440)%1440;const h=Math.floor(m/60),mm=m%60;const p=h<4?'রাত':h<6?'ভোর':h<12?'সকাল':h<15?'দুপুর':h<18?'বিকাল':h<20?'সন্ধ্যা':'রাত';const h12=h%12===0?12:h%12;return p+' '+bn(h12)+':'+bn(pad(mm));}
+function fmtDur(m){m=Math.round(m);const h=Math.floor(m/60),r=m%60;const o=[];if(h)o.push(bn(h)+' ঘণ্টা');if(r)o.push(bn(r)+' মিনিট');return o.join(' ')||'০ মিনিট';}
+function dfmt(s,opt){try{return pdate(s).toLocaleDateString('bn-BD',opt||{day:'numeric',month:'long'});}catch(e){return s;}}
+const EST={1:180,2:270,3:360}; // প্রতি অধ্যায়ের আনুমানিক সময় (মিনিট) — সেটিং-এ বদলানো যায় না, কোডে বদলানো যাবে
+const DIFF={1:'সহজ',2:'মাঝারি',3:'কঠিন'};
+
+function def(){
+  const names=['পদার্থবিজ্ঞান','রসায়ন','উচ্চতর গণিত','জীববিজ্ঞান','ইংরেজি','বাংলা','তথ্য ও যোগাযোগ প্রযুক্তি'];
+  return {exam:'',hours:6,sStart:'06:00',sEnd:'23:00',pOn:true,pStart:'16:00',pLen:3,rev:45,
+    subjects:names.map((n,i)=>({id:'s'+i,name:n,diff:2,chapters:[]})),log:{},fz:null,keep:null,ov:{},mix:30,ver:2};
+}
+let S=load();
+function load(){try{const r=localStorage.getItem(KEY);if(r){const o=JSON.parse(r);if(!o.ver){o.fz=null;o.ver=2;}return Object.assign(def(),o);}}catch(e){}return def();}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+function resetFz(){
+  const t=today();S.keep=null;
+  if(S.fz&&S.fz.date===t){const k=S.fz.sessions.filter(s=>isDone(t,s.idx));if(k.length)S.keep={date:t,sessions:k.map(s=>Object.assign({},s))};}
+  S.fz=null;save();
+}
+const isDone=(d,idx)=>!!(S.log[d]&&S.log[d].s&&S.log[d].s[idx]);
+function findCh(id){for(const s of S.subjects){const c=s.chapters.find(x=>x.id===id);if(c)return c;}return null;}
+
+function slotsOf(){
+  let rem=Math.round(S.hours*60);const out=[];
+  const a=toMin(S.sStart),b=toMin(S.sEnd);
+  let w=[[a,b]];
+  if(S.pOn){const ps=toMin(S.pStart),pe=ps+Math.round(S.pLen*60);w=[];
+    if(ps-a>=30)w.push([a,Math.min(ps,b)]);
+    if(b-pe>=30)w.push([Math.max(pe,a),b]);}
+  for(const x of w){let c=x[0];const y=x[1];
+    while(rem>=30&&y-c>=30){const len=Math.min(90,rem,y-c);out.push({start:c,end:c+len,len});c+=len+10;rem-=len;}}
+  return out;
+}
+
+function buildPlan(){
+  const chCount=S.subjects.reduce((n,s)=>n+s.chapters.length,0);
+  const none={days:[],need:0,cap:0,studyDays:0,rev:0,chCount,total:0};
+  if(!S.exam||!chCount)return none;
+  const t=today();
+  const total=Math.round((pdate(S.exam)-pdate(t))/864e5);
+  if(total<=0)return none;
+  const rev=Math.min(Number(S.rev)||0,Math.floor(total/2));
+  const studyDays=total-rev;
+  const sl=slotsOf();
+  const daySum=sl.reduce((n,x)=>n+x.len,0);
+  const mkc=(s,yr)=>s.chapters.filter(c=>!c.done&&((c.year===1)===yr)).map(c=>({c,rem:Math.max(EST[s.diff]-(c.studied||0),0)})).filter(x=>x.rem>0);
+  const subs=S.subjects.map(s=>({s,ch:mkc(s,false),old:mkc(s,true)}));
+  const sum=x=>x.ch.concat(x.old).reduce((n,y)=>n+y.rem,0);
+  const need=subs.reduce((n,x)=>n+sum(x),0);
+  const eat=(sub,id,a)=>{for(const k of ['ch','old']){const e=sub[k].find(y=>y.c.id===id);if(e){e.rem-=a;if(e.rem<=0)sub[k].splice(sub[k].indexOf(e),1);return;}}};
+  const lists=S.subjects.map(s=>s.chapters.map(c=>({s,c})));
+  const rl=[];
+  for(let i=0;;i++){let any=false;for(const l of lists){if(l[i]){rl.push(l[i]);any=true;}}if(!any)break;}
+  let rp=0;
+  const mk=(type,s,c,slot)=>({type,subjId:s.id,subj:s.name,chapId:c.id,chap:c.name,start:slot.start,end:slot.end,len:slot.len});
+  const revSess=slot=>{const x=rl[rp%rl.length];rp++;return mk('rev',x.s,x.c,slot);};
+  const days=[];
+  const keepArr=(S.keep&&S.keep.date===t&&!(S.fz&&S.fz.date===t))?S.keep.sessions:[];
+  let startI=0;
+  if(S.fz&&S.fz.date===t){
+    days.push({date:t,rev:0>=studyDays,sessions:S.fz.sessions});
+    for(const ss of S.fz.sessions){
+      if(ss.type==='study'&&!isDone(t,ss.idx)){
+        const sub=subs.find(x=>x.s.id===ss.subjId);
+        if(sub){eat(sub,ss.chapId,ss.len1||ss.len);if(ss.chapId2)eat(sub,ss.chapId2,ss.len2);}
+      }
+    }
+    startI=1;
+  }
+  for(let i=startI;i<total;i++){
+    const d=pdate(t);d.setDate(d.getDate()+i);
+    const ds=dstr(d);
+    const isRev=i>=studyDays;
+    const ovs=S.ov&&S.ov[ds];
+    if(ovs){
+      const cp=ovs.map((s,j)=>Object.assign({},s,{idx:j}));
+      for(const ss of cp){if(ss.type==='study'){const sub=subs.find(x=>x.s.id===ss.subjId);if(sub){eat(sub,ss.chapId,ss.len1||ss.len);if(ss.chapId2)eat(sub,ss.chapId2,ss.len2);}}}
+      days.push({date:ds,rev:isRev,sessions:cp,manual:true});
+      continue;
+    }
+    const sessions=[];const used=new Set();
+    const sl2=(i===0&&keepArr.length)?sl.filter(x=>!keepArr.some(k=>x.start<k.end&&x.end>k.start)):sl;
+    for(const slot of sl2){
+      let ss=null;
+      if(!isRev){
+        let c=subs.filter(x=>x.ch.length||x.old.length);
+        if(c.length){
+          const f=c.filter(x=>!used.has(x.s.id));if(f.length)c=f;
+          c.sort((a,b)=>sum(b)-sum(a));
+          const sub=c[0];const cur=sub.ch[0],old=sub.old[0];
+          let l2=Math.round(slot.len*(S.mix||30)/100/5)*5;
+          if(cur&&old&&l2>=15&&slot.len-l2>=15){
+            ss=mk('study',sub.s,cur.c,slot);
+            ss.len1=slot.len-l2;ss.chapId2=old.c.id;ss.chap2=old.c.name;ss.len2=l2;
+            cur.rem-=ss.len1;old.rem-=l2;
+          }else{
+            const e=cur||old;
+            ss=mk('study',sub.s,e.c,slot);ss.len1=slot.len;e.rem-=slot.len;
+          }
+          used.add(sub.s.id);
+          sub.ch=sub.ch.filter(x=>x.rem>0);sub.old=sub.old.filter(x=>x.rem>0);
+        }
+      }
+      if(!ss)ss=revSess(slot);
+      ss.idx=sessions.length;sessions.push(ss);
+    }
+    days.push({date:ds,rev:isRev,sessions});
+  }
+  if(!(S.fz&&S.fz.date===t)&&days[0]){
+    let ss0=days[0].sessions;
+    if(keepArr.length){
+      ss0=keepArr.map(k=>Object.assign({},k,{kept:1})).concat(ss0).sort((a,b)=>a.start-b.start);
+      const ns={};
+      ss0.forEach((s,j)=>{s.idx=j;if(s.kept){ns[j]=1;delete s.kept;}});
+      if(!S.log[t])S.log[t]={min:0,foc:0,s:{}};
+      S.log[t].s=ns;days[0].sessions=ss0;
+    }
+    S.keep=null;if(S.ov)delete S.ov[t];
+    S.fz={date:t,sessions:ss0};save();
+  }
+  return {days,need,cap:studyDays*daySum,studyDays,rev,chCount,total};
+}
+
+/* ---------- actions ---------- */
+function tg(idx){
+  const t=today();const ss=S.fz.sessions[idx];
+  if(!S.log[t])S.log[t]={min:0,foc:0,s:{}};
+  const L=S.log[t];if(!L.s)L.s={};
+  const ch=findCh(ss.chapId),ch2=ss.chapId2?findCh(ss.chapId2):null;
+  const l1=ss.len1||ss.len,l2=ss.len2||0;
+  if(L.s[idx]){delete L.s[idx];L.min=Math.max(0,L.min-ss.len);
+    if(ss.type==='study'){if(ch)ch.studied=Math.max(0,(ch.studied||0)-l1);if(ch2)ch2.studied=Math.max(0,(ch2.studied||0)-l2);}}
+  else{L.s[idx]=1;L.min+=ss.len;
+    if(ss.type==='study'){if(ch)ch.studied=(ch.studied||0)+l1;if(ch2)ch2.studied=(ch2.studied||0)+l2;}}
+  save();render();
+}
+function addSub(){const v=document.getElementById('newsub').value.trim();if(!v)return;S.subjects.push({id:uid(),name:v,diff:2,chapters:[]});resetFz();render();}
+function delSub(id){const s=S.subjects.find(x=>x.id===id);if(!s||!confirm('"'+s.name+'" বিষয়টি মুছবে?'))return;S.subjects=S.subjects.filter(x=>x.id!==id);resetFz();render();}
+function setDiff(id,v){S.subjects.find(x=>x.id===id).diff=v;resetFz();render();}
+function addCh(id){
+  const el=document.getElementById('in_'+id);
+  const names=el.value.split(/[,،\n]/).map(x=>x.trim()).filter(Boolean);
+  if(!names.length)return;
+  const s=S.subjects.find(x=>x.id===id);
+  const ye=document.getElementById('yr_'+id);const yr=ye&&ye.value==='1'?1:2;
+  names.forEach(n=>s.chapters.push({id:uid(),name:n,year:yr,done:false,studied:0}));
+  resetFz();render();
+}
+function addTen(id){
+  const s=S.subjects.find(x=>x.id===id);
+  for(let i=1;i<=10;i++)s.chapters.push({id:uid(),name:'১ম বর্ষ – অধ্যায় '+bn(i),year:1,done:false,studied:0});
+  resetFz();render();
+}
+function renameCh(cid){
+  const c=findCh(cid);if(!c)return;
+  const v=prompt('অধ্যায়ের নাম',c.name);
+  if(v&&v.trim()){c.name=v.trim();resetFz();render();}
+}
+function delCh(sid,cid){const s=S.subjects.find(x=>x.id===sid);s.chapters=s.chapters.filter(c=>c.id!==cid);resetFz();render();}
+function togDone(sid,cid){const c=findCh(cid);c.done=!c.done;save();render();}
+function setS(k,v){S[k]=v;resetFz();render();}
+function askNotif(){
+  if(typeof Notification==='undefined'){toast('এই ব্রাউজারে নোটিফিকেশন সাপোর্ট নেই');return;}
+  Notification.requestPermission().then(p=>{toast(p==='granted'?'অনুমতি পাওয়া গেছে':'অনুমতি দেওয়া হয়নি');});
+}
+function exportData(){document.getElementById('imp').value=JSON.stringify(S);}
+function importData(){
+  try{const o=JSON.parse(document.getElementById('imp').value);S=Object.assign(def(),o);S.fz=null;save();render();toast('ডেটা লোড হয়েছে');}
+  catch(e){toast('ডেটা ঠিক নেই');}
+}
+function resetAll(){if(!confirm('সব ডেটা মুছে নতুন করে শুরু করবে?'))return;try{localStorage.removeItem(KEY);}catch(e){}S=def();render();}
+
+/* ---------- manual edit ---------- */
+let E=null;
+const hhmm=m=>{m=((m%1440)+1440)%1440;return pad(Math.floor(m/60))+':'+pad(m%60);};
+function openEdit(date){
+  const P=buildPlan();
+  const day=P.days.find(d=>d.date===date);
+  if(!day){toast('এই দিনের রুটিন নেই');return;}
+  const isT=date===today();
+  E={date,isT,from:tab,sessions:day.sessions.map(s=>Object.assign({},s,{orig:s.idx,done:isT&&isDone(date,s.idx)}))};
+  go('edit');
+}
+function eFix(s){
+  s.end=s.start+s.len;
+  if(s.chapId2){
+    if(!s.len2)s.len2=25;
+    if(s.len2>s.len-15)s.len2=Math.max(15,s.len-15);
+    s.len1=s.len-s.len2;
+    if(s.len1<=0){delete s.chapId2;delete s.chap2;delete s.len2;s.len1=s.len;}
+  }else{delete s.len2;s.len1=s.len;}
+}
+function eSet(i,k,v){
+  const s=E.sessions[i];
+  if(k==='start')s.start=toMin(v);
+  else if(k==='len')s.len=+v;
+  else if(k==='len2')s.len2=+v;
+  else if(k==='type')s.type=v;
+  else if(k==='subj'){
+    const sub=S.subjects.find(x=>x.id===v);s.subjId=v;s.subj=sub.name;
+    const c=sub.chapters.find(x=>x.year!==1&&!x.done)||sub.chapters.find(x=>!x.done)||sub.chapters[0];
+    s.chapId=c?c.id:'';s.chap=c?c.name:'(অধ্যায় নেই)';delete s.chapId2;delete s.chap2;
+  }
+  else if(k==='chap'){const c=findCh(v);if(c){s.chapId=c.id;s.chap=c.name;}}
+  else if(k==='chap2'){if(!v){delete s.chapId2;delete s.chap2;}else{const c=findCh(v);if(c){s.chapId2=c.id;s.chap2=c.name;}}}
+  eFix(s);render();
+}
+function eDel(i){E.sessions.splice(i,1);render();}
+function eAdd(){
+  const sub=S.subjects.find(x=>x.chapters.length);
+  if(!sub){toast('আগে অধ্যায় যোগ করো');return;}
+  const last=E.sessions.reduce((m,s)=>Math.max(m,s.end),0);
+  const c=sub.chapters.find(x=>x.year!==1&&!x.done)||sub.chapters[0];
+  const st=last?last+10:toMin(S.sStart);
+  E.sessions.push({type:'study',subjId:sub.id,subj:sub.name,chapId:c.id,chap:c.name,start:st,len:60,end:st+60,len1:60,orig:null,done:false});
+  render();
+}
+function eSave(){
+  const arr=E.sessions.slice().sort((a,b)=>a.start-b.start);
+  let clash=false;
+  for(let i=1;i<arr.length;i++)if(arr[i].start<arr[i-1].end)clash=true;
+  if(S.pOn){const ps=toMin(S.pStart),pe=ps+Math.round(S.pLen*60);if(arr.some(s=>s.start<pe&&s.end>ps))clash=true;}
+  if(clash&&!confirm('কিছু সেশনের সময় একটার সাথে আরেকটা বা প্রাইভেটের সাথে মিলে যাচ্ছে। তবুও সংরক্ষণ করবে?'))return;
+  const out=arr.map((s,j)=>{const o=Object.assign({},s);delete o.orig;delete o.done;o.idx=j;return o;});
+  if(E.isT){
+    const t=E.date;const oldS=(S.log[t]&&S.log[t].s)||{};const ns={};
+    arr.forEach((s,j)=>{if(s.orig!=null&&oldS[s.orig])ns[j]=1;});
+    if(S.log[t])S.log[t].s=ns;
+    S.fz={date:t,sessions:out};
+  }else{
+    if(!S.ov)S.ov={};
+    S.ov[E.date]=out.map(o=>{const c=Object.assign({},o);delete c.idx;return c;});
+  }
+  save();const back=E.from;E=null;go(back==='edit'?'routine':back);toast('সংরক্ষণ হয়েছে');
+}
+function eCancel(){const back=E.from;E=null;go(back==='edit'?'routine':back);}
+function eAuto(){
+  if(!confirm('এই দিনের রুটিন অটো রুটিনে ফিরিয়ে দেবে?'))return;
+  if(E.isT){resetFz();}else{if(S.ov)delete S.ov[E.date];save();}
+  const back=E.from;E=null;go(back==='edit'?'routine':back);
+}
+
+/* ---------- alerts & reminders ---------- */
+let tmo=[];
+function toast(m){const e=document.getElementById('toast');e.textContent=m;e.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>e.style.display='none',4500);}
+function beep(){try{const c=new (window.AudioContext||window.webkitAudioContext)();const o=c.createOscillator();o.connect(c.destination);o.frequency.value=880;o.start();setTimeout(()=>{o.stop();c.close();},400);}catch(e){}}
+function alertUser(title,body){
+  try{navigator.vibrate&&navigator.vibrate([300,150,300]);}catch(e){}
+  beep();toast(title+' — '+body);
+  try{if(typeof Notification!=='undefined'&&Notification.permission==='granted')new Notification(title,{body});}catch(e){}
+}
+function sched(){
+  tmo.forEach(clearTimeout);tmo=[];
+  if(!S.fz||S.fz.date!==today())return;
+  const n=new Date();const now=n.getHours()*60+n.getMinutes()+n.getSeconds()/60;
+  S.fz.sessions.forEach(ss=>{
+    if(isDone(S.fz.date,ss.idx))return;
+    const at=ss.start-5;
+    if(at>now)tmo.push(setTimeout(()=>alertUser('পড়ার সময় হচ্ছে',ss.subj+' — '+ss.chap),(at-now)*60000));
+  });
+}
+
+/* ---------- timer ---------- */
+const MODES={focus:[25,'ফোকাস'],short:[5,'ছোট বিরতি'],long:[15,'বড় বিরতি']};
+let T={mode:'focus',end:0,left:25*60,run:false,iv:null,count:0};
+const clock=s=>bn(pad(Math.floor(s/60)))+':'+bn(pad(s%60));
+function setMode(m){stopT();T.mode=m;T.left=MODES[m][0]*60;render();}
+function startT(){if(T.run)return;T.run=true;T.end=Date.now()+T.left*1000;T.iv=setInterval(tick,500);render();}
+function pauseT(){if(!T.run)return;T.left=Math.max(0,Math.round((T.end-Date.now())/1000));stopT();render();}
+function stopT(){clearInterval(T.iv);T.run=false;}
+function resetT(){stopT();T.left=MODES[T.mode][0]*60;render();}
+function tick(){const l=Math.round((T.end-Date.now())/1000);if(l<=0){finishT();return;}T.left=l;const e=document.getElementById('tm');if(e)e.textContent=clock(l);}
+function finishT(){
+  stopT();
+  if(T.mode==='focus'){
+    const t=today();if(!S.log[t])S.log[t]={min:0,foc:0,s:{}};S.log[t].foc=(S.log[t].foc||0)+25;save();
+    T.count++;T.mode=T.count%4===0?'long':'short';
+    alertUser('ফোকাস শেষ','এবার বিরতি নাও');
+  }else{T.mode='focus';alertUser('বিরতি শেষ','আবার পড়তে বসো');}
+  T.left=MODES[T.mode][0]*60;render();
+}
+
+/* ---------- views ---------- */
+const card=(h,c)=>'<div class="card '+(c||'')+'">'+h+'</div>';
+function sylCard(){
+  let n=0,dn=0,n1=0,d1=0,n2=0,d2=0;
+  S.subjects.forEach(s=>s.chapters.forEach(c=>{n++;if(c.done)dn++;if(c.year===1){n1++;if(c.done)d1++;}else{n2++;if(c.done)d2++;}}));
+  if(!n)return card('<b>সিলেবাসের অগ্রগতি</b><div class="mu">অধ্যায় যোগ করলে এখানে শতাংশ দেখাবে।</div>');
+  const p=Math.round(dn/n*100);
+  const pc=(a,b)=>b?bn(Math.round(a/b*100))+'%':'—';
+  return card('<b>সিলেবাসের কত শতাংশ শেষ</b><div class="big" style="color:var(--gr)">'+bn(p)+'%</div><div class="pb"><i style="width:'+p+'%"></i></div><div class="mu" style="margin-top:6px">মোট '+bn(n)+'টি অধ্যায়ের মধ্যে '+bn(dn)+'টি শেষ</div><div class="mu">১ম বর্ষ: '+pc(d1,n1)+' ('+bn(d1)+'/'+bn(n1)+') · ২য় বর্ষ: '+pc(d2,n2)+' ('+bn(d2)+'/'+bn(n2)+')</div>');
+}
+const sessRow=(ss,done,inter)=>'<div class="ses '+(done?'dn':'')+' '+(ss.type==='rev'?'rv':'')+'"><div class="tm">'+fmtT(ss.start)+'<br><small>'+fmtDur(ss.len)+'</small></div><div class="inf"><b>'+esc(ss.subj)+'</b><div class="mu">'+(ss.type==='rev'?'রিভিশন · ':'')+esc(ss.chap)+(ss.chap2?' ('+fmtDur(ss.len1)+')':'')+'</div>'+(ss.chap2?'<div class="mu" style="color:var(--rv)">১ম বর্ষ: '+esc(ss.chap2)+' ('+fmtDur(ss.len2)+')</div>':'')+'</div>'+(inter?'<button class="ck" onclick="tg('+ss.idx+')">'+(done?'✓':'')+'</button>':'')+'</div>';
+const wd=d=>{try{return d.toLocaleDateString('bn-BD',{weekday:'short'});}catch(e){return '';}};
+
+const views={
+home(){
+  const P=buildPlan();
+  if(!S.exam)return card('<b>শুরু করতে:</b> <b>সেটিং</b> ট্যাবে পরীক্ষার তারিখ দাও।');
+  if(!P.chCount)return card('এবার <b>অধ্যায়</b> ট্যাবে প্রতিটি বিষয়ের অধ্যায়গুলো যোগ করো। তারপর রুটিন তৈরি হবে।');
+  if(!P.days.length)return card('পরীক্ষার তারিখ আজ বা পার হয়ে গেছে। <b>সেটিং</b>-এ তারিখ ঠিক করো।');
+  const t=today();const d0=P.days[0];const L=S.log[t]||{min:0,foc:0};
+  const done=d0.sessions.filter(s=>isDone(t,s.idx)).length;
+  const rd=pdate(t);rd.setDate(rd.getDate()+P.studyDays);
+  let h=card('<div class="big">'+bn(P.total)+'</div><div>দিন বাকি</div><div class="mu">রিভিশন শুরু: '+dfmt(dstr(rd))+' ('+bn(P.rev)+' দিন)</div>');
+  h+=sylCard();
+  if(P.need>P.cap)h+=card('বর্তমান হিসাবে অধ্যায়গুলো শেষ করতে প্রায় '+fmtDur(P.need)+' লাগবে, কিন্তু রিভিশনের আগে সময় আছে '+fmtDur(P.cap)+'। দৈনিক পড়ার ঘণ্টা বাড়াও বা রিভিশনের দিন কমাও। (প্রতি অধ্যায়ের সময় আমার ধরে নেওয়া অনুমান।)','warn');
+  h+='<div class="dh">আজকের রুটিন <span class="mu">· '+bn(done)+'/'+bn(d0.sessions.length)+' সেশন · '+fmtDur((L.min||0)+(L.foc||0))+' পড়া হয়েছে</span></div>';
+  if(S.pOn)h+='<div class="mu">প্রাইভেট: '+fmtT(toMin(S.pStart))+' থেকে '+fmtT(toMin(S.pStart)+Math.round(S.pLen*60))+'</div>';
+  h+=d0.sessions.map(s=>sessRow(s,isDone(t,s.idx),true)).join('');
+  h+='<div class="row"><button class="ghost" onclick="openEdit(\''+t+'\')">✏️ আজকের রুটিন এডিট করো</button><button class="ghost" onclick="if(confirm(\'আজকের রুটিন অটো দিয়ে নতুন করে বানাবে? শেষ করা সেশন থেকে যাবে।\')){resetFz();render()}">অটো নতুন করে বানাও</button></div>';
+  setTimeout(sched,0);
+  return h;
+},
+routine(){
+  const P=buildPlan();
+  if(!P.days.length)return card('রুটিন দেখতে আগে <b>সেটিং</b>-এ পরীক্ষার তারিখ আর <b>অধ্যায়</b> ট্যাবে অধ্যায় যোগ করো।');
+  let h='<div class="mu">আগামী ১৪ দিনের রুটিন। কোনো দিন পড়া মিস হলে বাকি দিনের রুটিন নিজে থেকে নতুন করে সাজবে।</div>';
+  P.days.slice(0,14).forEach(d=>{
+    h+='<div class="dh '+(d.rev?'rv':'')+'"><div class="row" style="margin:0"><span style="flex:1">'+dfmt(d.date,{weekday:'long',day:'numeric',month:'long'})+(d.rev?' · রিভিশন পর্ব':'')+(d.manual?' · ✏️ নিজের বানানো':'')+'</span><button class="ghost" style="padding:5px 12px;font-size:13px" onclick="openEdit(\''+d.date+'\')">এডিট</button></div></div>';
+    h+=d.sessions.map(s=>'<div class="dl">'+fmtT(s.start)+' · <b>'+esc(s.subj)+'</b> — '+esc(s.chap)+(s.chap2?' + ১ম বর্ষ: '+esc(s.chap2):'')+'</div>').join('');
+  });
+  return h;
+},
+chapters(){
+  const chRow=(s,c)=>'<div class="ch"><button class="ck '+(c.done?'on':'')+'" onclick="togDone(\''+s.id+'\',\''+c.id+'\')">'+(c.done?'✓':'')+'</button><span class="'+(c.done?'strike':'')+'" onclick="renameCh(\''+c.id+'\')">'+esc(c.name)+'</span><button class="x" onclick="delCh(\''+s.id+'\',\''+c.id+'\')">×</button></div>';
+  return S.subjects.map(s=>{
+    const dn=s.chapters.filter(c=>c.done).length;
+    return card('<div class="row"><b>'+esc(s.name)+'</b><span class="mu">'+bn(dn)+'/'+bn(s.chapters.length)+'</span></div>'+
+      '<div class="row"><span class="mu">কঠিনতা:</span><select onchange="setDiff(\''+s.id+'\',+this.value)">'+[1,2,3].map(k=>'<option value="'+k+'" '+(s.diff===k?'selected':'')+'>'+DIFF[k]+'</option>').join('')+'</select><button class="sm danger" onclick="delSub(\''+s.id+'\')">বিষয় মুছো</button></div>'+
+      '<div class="dh">২য় বর্ষ (চলমান)</div>'+s.chapters.filter(c=>c.year!==1).map(c=>chRow(s,c)).join('')+
+      '<div class="dh rv">১ম বর্ষ (বাকি/রিভিশন)</div>'+s.chapters.filter(c=>c.year===1).map(c=>chRow(s,c)).join('')+
+      '<div class="row"><select id="yr_'+s.id+'"><option value="2">২য় বর্ষ</option><option value="1">১ম বর্ষ</option></select><input id="in_'+s.id+'" placeholder="অধ্যায়ের নাম (কমা দিয়ে একাধিক)" onkeydown="if(event.key===\'Enter\')addCh(\''+s.id+'\')"><button class="sm" onclick="addCh(\''+s.id+'\')">যোগ</button></div>'+
+      '<div class="row"><button class="ghost" onclick="addTen(\''+s.id+'\')">১ম বর্ষের ১০টি অধ্যায় একসাথে যোগ করো</button></div>'+
+      '<div class="mu">অধ্যায়ের নামে চাপ দিলে নাম বদলানো যাবে।</div>');
+  }).join('')+card('<div class="row"><input id="newsub" placeholder="নতুন বিষয়"><button class="sm" onclick="addSub()">যোগ</button></div>');
+},
+edit(){
+  if(!E)return card('এডিট করার কিছু খোলা নেই। <button class="ghost" onclick="go(\'home\')">ফিরে যাও</button>');
+  const opts=(arr,sel)=>arr.map(a=>'<option value="'+a[0]+'" '+(String(sel)===String(a[0])?'selected':'')+'>'+a[1]+'</option>').join('');
+  const lens=[30,45,60,75,90,105,120,150,180].map(x=>[x,fmtDur(x)]);
+  const l2s=[15,20,25,30,40,45,60].map(x=>[x,fmtDur(x)]);
+  let h='<div class="dh">'+dfmt(E.date,{weekday:'long',day:'numeric',month:'long'})+' এর রুটিন এডিট</div>';
+  if(S.pOn)h+='<div class="mu">প্রাইভেট: '+fmtT(toMin(S.pStart))+' থেকে '+fmtT(toMin(S.pStart)+Math.round(S.pLen*60))+'</div>';
+  E.sessions.forEach((s,i)=>{
+    if(s.done){h+=card('<b>'+esc(s.subj)+'</b> · '+fmtT(s.start)+' · '+fmtDur(s.len)+'<div class="mu">✓ শেষ করা সেশন। বদলাতে চাইলে আগে আজ ট্যাবে টিক তুলে দাও।</div>');return;}
+    const sub=S.subjects.find(x=>x.id===s.subjId);const chs=sub?sub.chapters:[];
+    const copts=chs.map(c=>[c.id,(c.year===1?'১ম বর্ষ: ':'২য় বর্ষ: ')+esc(c.name)]);
+    const oopts=[['','— নেই —']].concat(chs.filter(c=>c.year===1).map(c=>[c.id,esc(c.name)]));
+    h+=card(
+      '<div class="row"><input type="time" value="'+hhmm(s.start)+'" onchange="eSet('+i+',\'start\',this.value)"><select onchange="eSet('+i+',\'len\',this.value)">'+opts(lens,s.len)+'</select><button class="x" onclick="eDel('+i+')">×</button></div>'+
+      '<div class="row"><select style="flex:1" onchange="eSet('+i+',\'subj\',this.value)">'+opts(S.subjects.map(x=>[x.id,esc(x.name)]),s.subjId)+'</select><select onchange="eSet('+i+',\'type\',this.value)">'+opts([['study','নতুন পড়া'],['rev','রিভিশন']],s.type)+'</select></div>'+
+      '<div class="row"><select style="flex:1" onchange="eSet('+i+',\'chap\',this.value)">'+(copts.length?opts(copts,s.chapId):'<option>(অধ্যায় নেই)</option>')+'</select></div>'+
+      (oopts.length>1?'<div class="mu">সাথে ১ম বর্ষের অধ্যায় (ঐচ্ছিক):</div><div class="row"><select style="flex:1" onchange="eSet('+i+',\'chap2\',this.value)">'+opts(oopts,s.chapId2||'')+'</select>'+(s.chapId2?'<select onchange="eSet('+i+',\'len2\',this.value)">'+opts(l2s,s.len2)+'</select>':'')+'</div>':''));
+  });
+  h+='<div class="row"><button class="ghost" onclick="eAdd()">+ সেশন যোগ করো</button></div>';
+  h+='<div class="row"><button class="pri" onclick="eSave()">সংরক্ষণ</button><button class="ghost" onclick="eCancel()">বাতিল</button><button class="ghost" onclick="eAuto()">অটো রুটিনে ফেরো</button></div>';
+  return h;
+},
+timer(){
+  return card('<div class="modes">'+Object.keys(MODES).map(k=>'<button class="'+(T.mode===k?'on':'')+'" onclick="setMode(\''+k+'\')">'+MODES[k][1]+' '+bn(MODES[k][0])+'মি</button>').join('')+'</div>'+
+    '<div class="clock" id="tm">'+clock(T.left)+'</div>'+
+    '<div class="row" style="justify-content:center">'+(T.run?'<button class="pri" onclick="pauseT()">থামাও</button>':'<button class="pri" onclick="startT()">শুরু</button>')+'<button class="ghost" onclick="resetT()">রিসেট</button></div>'+
+    '<div class="mu" style="text-align:center;margin-top:10px">আজ সম্পন্ন ফোকাস সেশন: '+bn(T.count)+' · টাইমার চলাকালে অ্যাপ খোলা রাখো</div>');
+},
+progress(){
+  const days=[];
+  for(let i=6;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);const L=S.log[dstr(d)];days.push({m:L?(L.min||0)+(L.foc||0):0,d});}
+  const mx=Math.max(60,...days.map(x=>x.m));
+  let streak=0;
+  for(let i=0;i<400;i++){const d=new Date();d.setDate(d.getDate()-i);const L=S.log[dstr(d)];const m=L?(L.min||0)+(L.foc||0):0;if(m>0)streak++;else if(i>0)break;}
+  let h=sylCard()+card('<b>গত ৭ দিনে পড়া</b><div class="bars">'+days.map(x=>'<div class="bc"><div class="bv">'+(x.m?bn(Math.round(x.m/6)/10)+'ঘ':'')+'</div><div class="bar" style="height:'+Math.round(x.m/mx*120)+'px"></div><div class="mu">'+wd(x.d)+'</div></div>').join('')+'</div><div class="mu" style="margin-top:8px">টানা '+bn(streak)+' দিন পড়েছ</div>');
+  h+=card('<b>অধ্যায় শেষ</b>'+S.subjects.map(s=>{const n=s.chapters.length,dn=s.chapters.filter(c=>c.done).length;const p=n?Math.round(dn/n*100):0;return '<div style="margin-top:10px"><div class="row" style="margin:0"><span style="flex:1">'+esc(s.name)+'</span><span class="mu">'+bn(p)+'% · ১ম '+bn(s.chapters.filter(c=>c.year===1&&c.done).length)+'/'+bn(s.chapters.filter(c=>c.year===1).length)+' · ২য় '+bn(s.chapters.filter(c=>c.year!==1&&c.done).length)+'/'+bn(s.chapters.filter(c=>c.year!==1).length)+'</span></div><div class="pb"><i style="width:'+p+'%"></i></div></div>';}).join(''));
+  return h;
+},
+settings(){
+  const hrs=[5,6,7,8,9,10],pl=[1,1.5,2,2.5,3,3.5,4,5];
+  return card('<b>পরীক্ষা ও সময়</b>'+
+    '<label class="l">পরীক্ষা শুরুর তারিখ</label><input type="date" value="'+esc(S.exam)+'" onchange="setS(\'exam\',this.value)">'+
+    '<label class="l">দিনে পড়ার ঘণ্টা</label><select onchange="setS(\'hours\',+this.value)">'+hrs.map(h=>'<option value="'+h+'" '+(S.hours===h?'selected':'')+'>'+bn(h)+' ঘণ্টা</option>').join('')+'</select>'+
+    '<label class="l">পড়ার সময়সীমা (শুরু – শেষ)</label><div class="row"><input type="time" value="'+S.sStart+'" onchange="setS(\'sStart\',this.value)"><input type="time" value="'+S.sEnd+'" onchange="setS(\'sEnd\',this.value)"></div>'+
+    '<label class="l">শেষ কত দিন শুধু রিভিশন</label><input type="number" min="0" max="120" value="'+S.rev+'" onchange="setS(\'rev\',+this.value)">'+
+    '<label class="l">প্রতি সেশনে ১ম বর্ষের অধ্যায়ে সময়ের কত অংশ যাবে</label><select onchange="setS(\'mix\',+this.value)">'+[20,30,40,50].map(p=>'<option value="'+p+'" '+((S.mix||30)===p?'selected':'')+'>'+bn(p)+'%</option>').join('')+'</select>')+
+  card('<b>প্রাইভেট/কোচিং</b>'+
+    '<label class="l"><input type="checkbox" '+(S.pOn?'checked':'')+' onchange="setS(\'pOn\',this.checked)"> রুটিনে প্রাইভেটের সময় বাদ দাও</label>'+
+    '<label class="l">শুরুর সময়</label><input type="time" value="'+S.pStart+'" onchange="setS(\'pStart\',this.value)">'+
+    '<label class="l">কত ঘণ্টা</label><select onchange="setS(\'pLen\',+this.value)">'+pl.map(h=>'<option value="'+h+'" '+(S.pLen===h?'selected':'')+'>'+bn(h)+' ঘণ্টা</option>').join('')+'</select>')+
+  card('<b>রিমাইন্ডার</b><div class="mu">সেশন শুরুর ৫ মিনিট আগে জানাবে। তবে অ্যাপ/ব্রাউজার খোলা না থাকলে আসবে না।</div><div class="row"><button class="sm" onclick="askNotif()">নোটিফিকেশনের অনুমতি দাও</button></div>')+
+  card('<b>ব্যাকআপ</b><div class="mu">ডেটা এই ফোনের ব্রাউজারেই থাকে। ব্রাউজারের ডেটা মুছলে হারিয়ে যাবে, তাই মাঝে মাঝে কপি করে কোথাও রেখো।</div><textarea id="imp"></textarea><div class="row"><button class="ghost" onclick="exportData()">ডেটা দেখাও</button><button class="ghost" onclick="importData()">ডেটা লোড করো</button></div><div class="row"><button class="sm danger" onclick="resetAll()">সব মুছে নতুন করে শুরু</button></div>');
+}
+};
+const TABS=[['home','🏠','আজ'],['routine','🗓️','রুটিন'],['chapters','📖','অধ্যায়'],['timer','⏱️','টাইমার'],['progress','📊','অগ্রগতি'],['settings','⚙️','সেটিং']];
+let tab='home';
+function go(t){tab=t;render();window.scrollTo(0,0);}
+function render(){
+  document.getElementById('main').innerHTML=views[tab]();
+  document.getElementById('nav').innerHTML=TABS.map(x=>'<button class="'+(tab===x[0]?'on':'')+'" onclick="go(\''+x[0]+'\')"><span class="ic">'+x[1]+'</span>'+x[2]+'</button>').join('');
+}
+render();
+try{if('serviceWorker' in navigator&&location.protocol.indexOf('http')===0)navigator.serviceWorker.register('sw.js').catch(()=>{});}catch(e){}
+try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist();}catch(e){}
+</script>
+</body>
+</html>
